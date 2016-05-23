@@ -45,8 +45,8 @@ def sendFile(cmd, sock):
 			#get size of the file
 			fileSize = str(len(fileData))
 
-				#Prepend 0's to the size of string
-				# to make 10 bytes
+			#Prepend 0's to the size of string
+			# to make 10 bytes
 			while len(fileSize) < 10:
 				fileSize = "0" + fileSize
 
@@ -89,9 +89,11 @@ connSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #Connect to the server
 connSock.connect((serverAddr, int(serverPort)))
 
-
+print "\n"
+print "Welcome!"
 print "Use commands: ls, get <FILE NAME>, put <FILE NAME>, or quit"
 print "\n"
+
 cmd = raw_input("<ftp> ")
 
 
@@ -100,93 +102,102 @@ cmd = cmd.split()
 
 while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 
-	#open temporary data transfer connection
-	cmdSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	if(cmd[0] != "lls"):
+	
+		#open temporary data transfer connection
+		cmdSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-	# Bind the socket to port 0
-	cmdSocket.bind(('',0))
+		# Bind the socket to port 0
+		cmdSocket.bind(('',0))
 
-	# Retreive the ephemeral port number
-	ephemeralPort = cmdSocket.getsockname()[1]
+		# Retreive the ephemeral port number
+		ephemeralPort = cmdSocket.getsockname()[1]
+		
+		#client requested get
+		if(cmd[0] == "get"):
+			#Concatenate user command with ephemeral port number
+			cmdData = cmd[0] + " " + cmd[1] + " " + str(ephemeralPort)
+	
+			#Send that information to server through current connection
+			connSock.send(cmdData)
+	
+			#listen for server's response
+			cmdSocket.listen(1)
+	
+			#accept the connection
+			serverSocket, addr = cmdSocket.accept()
+			print "Data transfer channel connection established. \n"
+	
+			#used to get content inside of the file
+			fileData = ""
+	
+			#get and print size of the file
+			fileSize = 0
+			fileSize = int(recvAll(serverSocket, 10))
+			print "The size of the received file is: ", fileSize
+	
+			#get contents of the file
+			fileData = recvAll(serverSocket, fileSize)
+	
+			#print name of the file
+			print "The name of the received file is: " + cmd[1]
+	
+			#open and write the file data
+			file = open(cmd[1], "w")
+			file.write(fileData)
+	
+			#close the file
+			file.close()
+	
+			#close data temporary transfer connection
+			serverSocket.close()
+
+		#client requested put
+		elif(cmd[0] == "put"):
+			#Concatenate user command with ephemeral port number
+			cmdData = cmd[0] + " " + cmd[1] + " " + str(ephemeralPort)
+	
+			#Send that information to server through current connection
+			connSock.send(cmdData)
+	
+			#listen for server's response
+			cmdSocket.listen(1)
+	
+			#accept the connection
+			serverSocket, addr = cmdSocket.accept()
+			print "Data transfer channel connection established. \n"
+	
+			sendFile(cmd, serverSocket)
+
+		#client requested ls	
+		elif(cmd[0] == "ls"):
+			#Concatenate user command with ephemeral port number
+			cmdData = cmd[0] + " " + str(ephemeralPort)
+	
+			#Send that information to server through current connection
+			connSock.send(cmdData)
+	
+			#Listen for server's response
+			cmdSocket.listen(1)
+	
+			#Accept connection from server
+			serverSocket, addr = cmdSocket.accept()
+			print "Data transfer channel connection established. \n"
+	
+			#Server's response
+			cmdResponse = serverSocket.recv(9000)
+			print(cmdResponse)
+	
+			#Close temporary data connection
+			serverSocket.close()
+	
+	#client requested lls
+	else:
+		#get and print list of content in current directory
+		for line in commands.getstatusoutput('ls -l'):
+			print(str(line))		
+	
 	print "\n"
-
-	if(cmd[0] == "get"):
-		#Concatenate user command with ephemeral port number
-		cmdData = cmd[0] + " " + cmd[1] + " " + str(ephemeralPort)
-
-		#Send that information to server through current connection
-		connSock.send(cmdData)
-
-		#listen for server's response
-		cmdSocket.listen(1)
-
-		#accept the connection
-		serverSocket, addr = cmdSocket.accept()
-		print "Data transfer channel connection established. \n"
-
-		#used to get content inside of the file
-		fileData = ""
-
-		#get and print size of the file
-		fileSize = 0
-		fileSize = int(recvAll(serverSocket, 10))
-		print "The size of the received file is: ", fileSize
-
-		#get contents of the file
-		fileData = recvAll(serverSocket, fileSize)
-
-		#print name of the file
-		print "The name of the received file is: " + cmd[1]
-
-		#open and write the file data
-		file = open(cmd[1], "w")
-		file.write(fileData)
-
-		#close the file
-		file.close()
-
-		#close data temporary transfer connection
-		serverSocket.close()
-
-	elif(cmd[0] == "put"):
-		#Concatenate user command with ephemeral port number
-		cmdData = cmd[0] + " " + cmd[1] + " " + str(ephemeralPort)
-
-		#Send that information to server through current connection
-		connSock.send(cmdData)
-
-		#listen for server's response
-		cmdSocket.listen(1)
-
-		#accept the connection
-		serverSocket, addr = cmdSocket.accept()
-		print "Data transfer channel connection established. \n"
-
-		sendFile(cmd, serverSocket)
-
-	elif(cmd[0] == "ls"):
-		#Concatenate user command with ephemeral port number
-		cmdData = cmd[0] + " " + str(ephemeralPort)
-
-		#Send that information to server through current connection
-		connSock.send(cmdData)
-
-		#Listen for server's response
-		cmdSocket.listen(1)
-
-		#Accept connection from server
-		serverSocket, addr = cmdSocket.accept()
-		print "Data transfer channel connection established. \n"
-
-		#Server's response
-		cmdResponse = serverSocket.recv(9000)
-		print(cmdResponse)
-
-		#Close temporary data connection
-		serverSocket.close()
-
-	elif(cmd[0] == "lls"):
-
 	cmd = raw_input("<ftp> ")
 	cmd = cmd.split()
 	print "\n"
