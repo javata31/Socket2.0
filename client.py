@@ -186,9 +186,7 @@ while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 		serverSocket.close()
 
 	elif(cmd[0] == "lls"):
-		for line in commands.getstatusoutput('ls -l'):
-			lines = str(line)
-			print lines
+
 	cmd = raw_input("<ftp> ")
 	cmd = cmd.split()
 	print "\n"
