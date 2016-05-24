@@ -181,6 +181,7 @@ while True:
 						dataTransmitter.send(str(line))
 			else:
 				print "'ls' command was unsuccessfull.\n"
+
 			#close temporary data transfer connection
 			dataTransmitter.close()
 			print "'ls' Command successfully processed \n"

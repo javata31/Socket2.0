@@ -212,27 +212,31 @@ while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 
 		#client requested ls	
 		elif(cmd[0] == "ls"):
-			#Concatenate user command with ephemeral port number
-			cmdData = cmd[0] + " " + str(ephemeralPort)
-	
-			#Send that information to server through current connection
-			connSock.send(cmdData)
-	
-			#Listen for server's response
-			cmdSocket.listen(1)
-	
-			#Accept connection from server
-			serverSocket, addr = cmdSocket.accept()
-			print "Data transfer channel connection established. \n"
-	
-			#Server's response
-			cmdResponse = serverSocket.recv(9000)
-			print(cmdResponse)
-			print "\n"
+			if(len(cmd) == 1):
 
-			#Close temporary data connection
-			serverSocket.close()
+				#Concatenate user command with ephemeral port number
+				cmdData = cmd[0] + " " + str(ephemeralPort)
 	
+				#Send that information to server through current connection
+				connSock.send(cmdData)
+	
+				#Listen for server's response
+				cmdSocket.listen(1)
+	
+				#Accept connection from server
+				serverSocket, addr = cmdSocket.accept()
+				print "Data transfer channel connection established. \n"
+	
+				#Server's response
+				cmdResponse = serverSocket.recv(9000)
+				print(cmdResponse)
+				print "\n"
+
+				#Close temporary data connection
+				serverSocket.close()
+			else:
+				print "Invalid command"
+
 	#client requested lls
 	else:
 		#get and print list of content in current directory
