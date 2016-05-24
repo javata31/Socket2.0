@@ -1,3 +1,9 @@
+# ******************************************************
+# This file implements a client for receving and sending
+# files to a server.  The client can also request a list 
+#  of the files in the server's directory.
+# ******************************************************
+
 import socket
 import os
 import sys
