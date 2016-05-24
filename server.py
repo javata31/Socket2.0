@@ -147,40 +147,40 @@ while True:
 			fileSize = 0
 			try:
 				fileSize = int(recvAll(dataTransmitter, 10))
+				#get contents of the file
+				fileData = recvAll(dataTransmitter, fileSize)
+				
+				if(fileData):	
+					#open and write the file data
+					file = open(cmd[1], "w")
+					file.write(fileData)
+
+					#close the file
+					file.close()
+					print "'put' command successfully processed \n"
+
 			except ValueError:
 				print "'put' command was unsuccessfull. File name may be invalid\n"
-				break
-	
-			#get contents of the file
-			fileData = recvAll(dataTransmitter, fileSize)
-			
-			if(fileData):	
-				#open and write the file data
-				file = open(cmd[1], "w")
-				file.write(fileData)
-
-				#close the file
-				file.close()
-				print "'put' command successfully processed \n"
-			
+				
 			#close data temporary transfer connection
 			dataTransmitter.close()
 
 		#Client specified "ls"
-		if(cmd[0] == "ls"):
-
+		if(cmd[0] == "ls"):			
 			#initialize ephemeral port number
 			ephemeralPort = int(cmd[1])
 
 			#open connection for data transfer
 			dataTransmitter = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			dataTransmitter.connect(("localhost", ephemeralPort))
-
-			#get list of content in current directory
-			for line in commands.getstatusoutput('ls -l'):
-				if line:				
-					dataTransmitter.send(str(line))
-		
+			
+			if(len(cmd) == 2):
+				#get list of content in current directory
+				for line in commands.getstatusoutput('ls -l'):
+					if line:				
+						dataTransmitter.send(str(line))
+			else:
+				print "'ls' command was unsuccessfull.\n"
 			#close temporary data transfer connection
 			dataTransmitter.close()
 			print "'ls' Command successfully processed \n"

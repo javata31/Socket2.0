@@ -67,7 +67,8 @@ def sendFile(cmd, sock):
 		#Output the name and the size of the file sent to server
 		print "The size of the file sent is: ", (fileSize)
 		print "The file sent was: " + fileName
-	
+		print "\n"
+
 		#close the connection used to transfer data
 		serverSocket.close()
 	
@@ -235,8 +236,11 @@ while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 	#client requested lls
 	else:
 		#get and print list of content in current directory
-		for line in commands.getstatusoutput('ls -l'):
-			print(str(line))		
+		if(len(cmd) == 1):		
+			for line in commands.getstatusoutput('ls -l'):
+				print(str(line))
+		else:
+			print "Invalid command"		
 		print"\n"
 
 
