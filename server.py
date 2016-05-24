@@ -1,8 +1,8 @@
- # *****************************************************
+# ******************************************************
 # This file implements a server for receving and sending
 # files.  The server also sends a list of the files in 
 # its directory to the client when they are requested.
-# *****************************************************
+# ******************************************************
 import socket
 import sys
 import commands
@@ -122,14 +122,16 @@ while True:
 			#open temporary connection to socket for data transfer
 			dataTransmitter = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			dataTransmitter.connect((serverAddr, ephemeralPort))
-
+		
+			#if file exists in directory
 			if(os.path.isfile(cmd[1])):
 				#send file to client
 				sendFile(cmd, dataTransmitter)
-				print "'get' command successfully processed \n"
- 			else:
-				dataTransmitter.send("'get' command was unsuccessful.  Not real file name. \n")
-				print "'get' command was unsuccessful.  Not real file name. \n"                      
+				print "'get' Command successfully processed \n"
+			#unsuccesful 			
+			else:
+				dataTransmitter.send("Invalid file name \n")
+				print "'get' Command was unsuccessful.  Not real file name. \n"                      
 
 		#Client specified "put"
 		if(cmd[0] == "put"):
@@ -145,9 +147,11 @@ while True:
 
 			#get size of the file
 			fileSize = 0
+	
 			try:
 				#get length of file
 				fileSize = int(recvAll(dataTransmitter, 10))
+
 				#get contents of the file
 				fileData = recvAll(dataTransmitter, fileSize)
 				
@@ -158,11 +162,11 @@ while True:
 
 					#close the file
 					file.close()
-					print "'put' command successfully processed \n"
+					print "'put' Command successfully processed \n"
 			
 			#invalid filename, throw error
 			except ValueError:
-				print "'put' command was unsuccessfull. File name may be invalid\n"
+				print "'put' Command was unsuccessfull. File name may be invalid\n"
 				
 			#close data temporary transfer connection
 			dataTransmitter.close()
@@ -176,13 +180,15 @@ while True:
 			dataTransmitter = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			dataTransmitter.connect(("localhost", ephemeralPort))
 			
+			#checks that ls command has nothing after it			
 			if(len(cmd) == 2):
 				#get list of content in current directory
 				for line in commands.getstatusoutput('ls -l'):
+					#Only send files if list is not empty					
 					if line:				
 						dataTransmitter.send(str(line))
 			else:
-				print "'ls' command was unsuccessfull.\n"
+				print "'ls' Command was unsuccessfull.\n"
 
 			#close temporary data transfer connection
 			dataTransmitter.close()

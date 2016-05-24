@@ -28,6 +28,7 @@ def recvAll(sock, numBytes):
 def sendFile(cmd, sock):
 	#file name identified
 	fileName = cmd[1]
+
 	try:
 		#open file and get contents
 		fileObj = open(fileName, "r")
@@ -65,13 +66,14 @@ def sendFile(cmd, sock):
 		fileSize = numSent-10
 	
 		#Output the name and the size of the file sent to server
-		print "The size of the file sent is: ", (fileSize)
+		print "The size of the file sent is: " + str(fileSize) + " bytes"
 		print "The file sent was: " + fileName
 		print "\n"
 
 		#close the connection used to transfer data
 		serverSocket.close()
-	
+
+	#file name was invalid	
 	except:
 		print "Invalid file name \n"				
 
@@ -101,6 +103,7 @@ print "\n"
 #grab input for ftp communication
 cmd = raw_input("<ftp> ")
 
+#sanitate user's commands
 while True:
 	if cmd:
 		#separate input by spaces
@@ -109,38 +112,57 @@ while True:
 		#get, put, ls, lls or quit commands needed for ftp communication between server and client
 		if(cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls" or cmd[0] == "quit"):
 
-			#need to specify file for get
-			if(cmd[0] == "get" and len(cmd) == 2):			
-				break
-			#no file is passed, throw error
-			elif(cmd[0] == "get" and len(cmd) != 2):	
-				print "Must include <FILE NAME>"
-				cmd = raw_input("<ftp> ")
-			#need to specify file for put
-			if(cmd[0] == "put" and len(cmd) == 2):
-				break
-			#no file is passed, throw error
-			elif(cmd[0] == "put" and len(cmd) != 2):
-				print "Must include <FILE NAME>"
-				cmd = raw_input("<ftp> ")
-			#command for listing files on server side
+			#validate get command's format
+			if(cmd[0] == "get"):
+				if(len(cmd) == 2):			
+					break
+				else:
+					print "Must include <FILE NAME>"
+					cmd = raw_input("<ftp> ")
+								
+			#vaidate put command's format
+			if(cmd[0] == "put"):
+				if(len(cmd) == 2):
+					break
+				else:
+					print "Must include <FILE NAME>"
+					cmd = raw_input("<ftp> ")
+			
+			#vaidate ls command's format
 			if(cmd[0] == "ls"):
-				break
-			#command for lisiting files on client side	
+				if(len(cmd) == 1):
+					break
+				else:
+					print "did you means ls?"
+					cmd = raw_input("<ftp> ")
+			
+			#vaidate lls command's format	
 			if(cmd[0] == "lls"):
-				break
-			#close connection and exit
+				if(len(cmd) == 1):
+					break
+				else:
+					print "did you means lls?"			
+					cmd = raw_input("<ftp> ")
+				
+			#validate quit command
 			if(cmd[0] == "quit"):
-				break
-		#error check for invalid commands
+				if(len(cmd) == 1):
+					break
+				else:
+					print "did you mean quit?"
+					cmd = raw_input("<ftp> ")
+
+		#command does not exist
 		else:
 			print "Invalid command.  Use commands: ls, get <FILE NAME>, put <FILE NAME>, or quit"
 			cmd = raw_input("<ftp> ")	
-	#error check for invalid commands	
+	
+	#cmd was empty.  input cmd	
 	else:
 		print "Invalid command.  Use commands: ls, get <FILE NAME>, put <FILE NAME>, or quit"	
 		cmd = raw_input("<ftp> ")
 
+#handle user's commands
 while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 	
 	#connect to server for any command except ls
@@ -179,7 +201,7 @@ while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 			try:
 				#grab length of file
 				fileSize = int(recvAll(serverSocket, 10))
-				print "The size of the received file is: ", fileSize
+				print "The size of the received file is: " + str(fileSize) + " bytes"
 	
 				#get contents of the file
 				fileData = recvAll(serverSocket, fileSize)
@@ -224,78 +246,94 @@ while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 
 		#client requested ls	
 		elif(cmd[0] == "ls"):
-			if(len(cmd) == 1):
 
-				#Concatenate user command with ephemeral port number
-				cmdData = cmd[0] + " " + str(ephemeralPort)
+			#Concatenate user command with ephemeral port number
+			cmdData = cmd[0] + " " + str(ephemeralPort)
 	
-				#Send that information to server through current connection
-				connSock.send(cmdData)
+			#Send that information to server through current connection
+			connSock.send(cmdData)
 	
-				#Listen for server's response
-				cmdSocket.listen(1)
+			#Listen for server's response
+			cmdSocket.listen(1)
 	
-				#Accept connection from server
-				serverSocket, addr = cmdSocket.accept()
-				print "Data transfer channel connection established. \n"
+			#Accept connection from server
+			serverSocket, addr = cmdSocket.accept()
+			print "Data transfer channel connection established. \n"
 	
-				#Server's response
-				cmdResponse = serverSocket.recv(9000)
-				print(cmdResponse)
-				print "\n"
+			#Server's response
+			cmdResponse = serverSocket.recv(9000)
+			print(cmdResponse)
+			print "\n"
 
-				#Close temporary data connection
-				serverSocket.close()
-			else:
-				print "Invalid command"
+			#Close temporary data connection
+			serverSocket.close()
 
 	#client requested lls
 	else:
 		#get and print list of content in current directory
-		if(len(cmd) == 1):		
-			for line in commands.getstatusoutput('ls -l'):
-				print(str(line))
-		else:
-			print "Invalid command"		
+		for line in commands.getstatusoutput('ls -l'):
+			print(str(line))	
+
 		print"\n"
 
 	#grab input for ftp communication
 	cmd = raw_input("<ftp> ")
 
+	#sanitate user's commands
 	while True:
 		if cmd:
 			#separate input by spaces
 			cmd = cmd.split()
+		
+			#get, put, ls, lls or quit commands needed for ftp communication between server and client
 			if(cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls" or cmd[0] == "quit"):
-				
-				#need to specify file for get
-				if(cmd[0] == "get" and len(cmd) == 2):			
-					break
-				#no file is passed, throw error
-				elif(cmd[0] == "get" and len(cmd) != 2):	
-					print "Must include <FILE NAME>"
-					cmd = raw_input("<ftp> ")
-				#need to specify file for put
-				if(cmd[0] == "put" and len(cmd) == 2):
-					break
-				#no file is passed, throw error
-				elif(cmd[0] == "put" and len(cmd) != 2):
-					print "Must include <FILE NAME>"
-					cmd = raw_input("<ftp> ")
-				#command for listing files on server side
+
+				#validate get command's format
+				if(cmd[0] == "get"):
+					if(len(cmd) == 2):			
+						break
+					else:
+						print "Must include <FILE NAME>"
+						cmd = raw_input("<ftp> ")
+								
+				#vaidate put command's format
+				if(cmd[0] == "put"):
+					if(len(cmd) == 2):
+						break
+					else:
+						print "Must include <FILE NAME>"
+						cmd = raw_input("<ftp> ")
+			
+				#vaidate ls command's format
 				if(cmd[0] == "ls"):
-					break
-				#command for listing files on client side
+					if(len(cmd) == 1):
+						break
+					else:
+						print "did you means ls?"
+						cmd = raw_input("<ftp> ")
+			
+				#vaidate lls command's format	
 				if(cmd[0] == "lls"):
-					break
-				#close connection and exit
+					if(len(cmd) == 1):
+						break
+					else:
+						print "did you means lls?"			
+						cmd = raw_input("<ftp> ")
+					
+				#validate quit command
 				if(cmd[0] == "quit"):
-					break
-			#invalid command entered
+					if(len(cmd) == 1):
+						break
+					else:
+						print "did you mean quit?"
+						cmd = raw_input("<ftp> ")
+
+			#command does not exist
 			else:
 				print "Invalid command.  Use commands: ls, get <FILE NAME>, put <FILE NAME>, or quit"
 				cmd = raw_input("<ftp> ")	
-		#invalid command entered	
+	
+		#cmd was empty.  input cmd	
 		else:
 			print "Invalid command.  Use commands: ls, get <FILE NAME>, put <FILE NAME>, or quit"	
 			cmd = raw_input("<ftp> ")
