@@ -123,10 +123,10 @@ while True:
 			elif(cmd[0] == "put" and len(cmd) != 2):
 				print "Must include <FILE NAME>"
 				cmd = raw_input("<ftp> ")
-			#command for listing files on server side
+			#command for server side
 			if(cmd[0] == "ls"):
 				break
-			#command for lisiting files on client side	
+			#command for client side	
 			if(cmd[0] == "lls"):
 				break
 			#close connection and exit
@@ -282,10 +282,10 @@ while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 				elif(cmd[0] == "put" and len(cmd) != 2):
 					print "Must include <FILE NAME>"
 					cmd = raw_input("<ftp> ")
-				#command for listing files on server side
+				#command for server side
 				if(cmd[0] == "ls"):
 					break
-				#command for listing files on client side
+				#command for client side
 				if(cmd[0] == "lls"):
 					break
 				#close connection and exit

@@ -146,7 +146,6 @@ while True:
 			#get size of the file
 			fileSize = 0
 			try:
-				#get length of file
 				fileSize = int(recvAll(dataTransmitter, 10))
 				#get contents of the file
 				fileData = recvAll(dataTransmitter, fileSize)
@@ -159,8 +158,7 @@ while True:
 					#close the file
 					file.close()
 					print "'put' command successfully processed \n"
-			
-			#invalid filename, throw error
+
 			except ValueError:
 				print "'put' command was unsuccessfull. File name may be invalid\n"
 				
