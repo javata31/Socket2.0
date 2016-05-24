@@ -28,49 +28,51 @@ def recvAll(sock, numBytes):
 def sendFile(cmd, sock):
 	#file name identified
 	fileName = cmd[1]
+	try:
+		#open file and get contents
+		fileObj = open(fileName, "r")
+	
+		#contents of the file
+		fileData = None
 
-	#open file and get contents
-	fileObj = open(fileName, "r")
+		while True:
 
-	#contents of the file
-	fileData = None
+			#grab the of the file
+			fileData = fileObj.read(15000)
 
-	while True:
-
-		#grab the of the file
-		fileData = fileObj.read(15000)
-
-		#if not empty
-		if fileData:
-			#get size of the file
-			fileSize = str(len(fileData))
-
-			#Prepend 0's to the size of string
-			# to make 10 bytes
-			while len(fileSize) < 10:
-				fileSize = "0" + fileSize
-
-			#Prepend size of file to fileData
-			fileData = fileSize + fileData
-
-			#used to count how much of the data has been sent
-			numSent = 0
-
-			#send file information to client
-			while len(fileData) > numSent:
-				numSent += serverSocket.send(fileData[numSent:])
-		else:
-			break
-
-	fileSize = numSent-10
-
-	#Output the name and the size of the file sent to server
-	print "The size of the file sent is: ", (fileSize)
-	print "The file sent was: " + fileName
-
-	#close the connection used to transfer data
-	serverSocket.close()
-
+			#if not empty
+			if fileData:
+				#get size of the file
+				fileSize = str(len(fileData))
+	
+				#Prepend 0's to the size of string
+				# to make 10 bytes
+				while len(fileSize) < 10:
+					fileSize = "0" + fileSize
+	
+				#Prepend size of file to fileData
+				fileData = fileSize + fileData
+	
+				#used to count how much of the data has been sent
+				numSent = 0
+	
+				#send file information to client
+				while len(fileData) > numSent:
+					numSent += serverSocket.send(fileData[numSent:])
+			else:
+				break
+	
+		fileSize = numSent-10
+	
+		#Output the name and the size of the file sent to server
+		print "The size of the file sent is: ", (fileSize)
+		print "The file sent was: " + fileName
+	
+		#close the connection used to transfer data
+		serverSocket.close()
+	
+	except:
+		print "Invalid file name \n"				
 
 
 #Throw flag if user did not supply enough arguments
@@ -94,11 +96,40 @@ print "Welcome!"
 print "Use commands: ls, get <FILE NAME>, put <FILE NAME>, or quit"
 print "\n"
 
+
 cmd = raw_input("<ftp> ")
+while True:
+	if cmd:
+		#separate input by spaces
+		cmd = cmd.split()
+		if(cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls" or cmd[0] == "quit"):
 
+			if(cmd[0] == "get" and len(cmd) == 2):			
+				break
+			elif(cmd[0] == "get" and len(cmd) != 2):	
+				print "Must include <FILE NAME>"
+				cmd = raw_input("<ftp> ")
 
-#separate input by spaces
-cmd = cmd.split()
+			if(cmd[0] == "put" and len(cmd) == 2):
+				break
+			elif(cmd[0] == "put" and len(cmd) != 2):
+				print "Must include <FILE NAME>"
+				cmd = raw_input("<ftp> ")
+
+			if(cmd[0] == "ls"):
+				break
+			
+			if(cmd[0] == "lls"):
+				break
+
+			if(cmd[0] == "quit"):
+				break
+		else:
+			print "Invalid command.  Use commands: ls, get <FILE NAME>, put <FILE NAME>, or quit"
+			cmd = raw_input("<ftp> ")		
+	else:
+		print "Invalid command.  Use commands: ls, get <FILE NAME>, put <FILE NAME>, or quit"	
+		cmd = raw_input("<ftp> ")
 
 while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 
@@ -133,22 +164,30 @@ while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 	
 			#get and print size of the file
 			fileSize = 0
-			fileSize = int(recvAll(serverSocket, 10))
-			print "The size of the received file is: ", fileSize
+
+			try:
+				fileSize = int(recvAll(serverSocket, 10))
+				print "The size of the received file is: ", fileSize
 	
-			#get contents of the file
-			fileData = recvAll(serverSocket, fileSize)
+				#get contents of the file
+				fileData = recvAll(serverSocket, fileSize)
+		
+				#print name of the file
+				print "The name of the received file is: " + cmd[1]
+				print "\n"
+		
+				#open and write the file data
+				file = open(cmd[1], "w")
+				file.write(fileData)
 	
-			#print name of the file
-			print "The name of the received file is: " + cmd[1]
-	
-			#open and write the file data
-			file = open(cmd[1], "w")
-			file.write(fileData)
-	
-			#close the file
-			file.close()
-	
+				#close the file
+				file.close()
+				
+			except ValueError:
+				print "Invalid file name \n"
+				serverSocket.close()
+				#break				
+
 			#close data temporary transfer connection
 			serverSocket.close()
 
@@ -166,8 +205,9 @@ while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 			#accept the connection
 			serverSocket, addr = cmdSocket.accept()
 			print "Data transfer channel connection established. \n"
-	
+			
 			sendFile(cmd, serverSocket)
+			serverSocket.close()
 
 		#client requested ls	
 		elif(cmd[0] == "ls"):
@@ -187,7 +227,8 @@ while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 			#Server's response
 			cmdResponse = serverSocket.recv(9000)
 			print(cmdResponse)
-	
+			print "\n"
+
 			#Close temporary data connection
 			serverSocket.close()
 	
@@ -196,10 +237,42 @@ while (cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls"):
 		#get and print list of content in current directory
 		for line in commands.getstatusoutput('ls -l'):
 			print(str(line))		
-	
-	print "\n"
+		print"\n"
+
+
 	cmd = raw_input("<ftp> ")
-	cmd = cmd.split()
+	while True:
+		if cmd:
+			#separate input by spaces
+			cmd = cmd.split()
+			if(cmd[0] == "get" or cmd[0] == "put" or cmd[0] == "ls" or cmd[0] == "lls" or cmd[0] == "quit"):
+	
+				if(cmd[0] == "get" and len(cmd) == 2):			
+					break
+				elif(cmd[0] == "get" and len(cmd) != 2):	
+					print "Must include <FILE NAME>"
+					cmd = raw_input("<ftp> ")
+	
+				if(cmd[0] == "put" and len(cmd) == 2):
+					break
+				elif(cmd[0] == "put" and len(cmd) != 2):
+					print "Must include <FILE NAME>"
+					cmd = raw_input("<ftp> ")
+	
+				if(cmd[0] == "ls"):
+					break
+	
+				if(cmd[0] == "lls"):
+					break
+
+				if(cmd[0] == "quit"):
+					break
+			else:
+				print "Invalid command.  Use commands: ls, get <FILE NAME>, put <FILE NAME>, or quit"
+				cmd = raw_input("<ftp> ")		
+		else:
+			print "Invalid command.  Use commands: ls, get <FILE NAME>, put <FILE NAME>, or quit"	
+			cmd = raw_input("<ftp> ")
 	print "\n"
 
 

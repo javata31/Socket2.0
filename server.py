@@ -1,11 +1,12 @@
  # *****************************************************
-# This file implements a server for receiving the file
-# sent using sendfile(). The server receives a file and
-# prints it's contents.
+# This file implements a server for receving and sending
+# files.  The server also sends a list of the files in 
+# its directory to the client when they are requested.
 # *****************************************************
 import socket
 import sys
 import commands
+import os.path
 
 #Receives file from client
 def recvAll(sock, numBytes):
@@ -30,22 +31,11 @@ def recvAll(sock, numBytes):
 
 #Sends file to client
 def sendFile(cmd, sock):
-	#local host is the server's address
-	serverAddr = "localhost"
-
 	#file name identified
 	fileName = cmd[1]
 
 	#open file and get contents
 	fileObj = open(fileName, "r")
-
-	#identify ephermeral port number
-	ephemeralPort = int(cmd[2])
-
-	#open temporary connection to socket for data transfer
-	dataTransmitter = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	dataTransmitter.connect((serverAddr, ephemeralPort))
-
 
 	#contents of the file
 	fileData = None
@@ -99,13 +89,14 @@ connSock.listen(1)
 
 #Leave connection open
 while True:
+	print "\n"
 	print "Waiting for connections:"
 
 	#Accept conection
 	clientSock, addr = connSock.accept()
 
 	#Print client address
-	print "Accepted from client: ", addr
+	print "Accepted connection from client: ", addr
 	print "\n"
 
 	#Case for second connections
@@ -122,11 +113,23 @@ while True:
 
 		#Client specified "get"
 		if(cmd[0] == "get"):
+			#local host is the server's address
+			serverAddr = "localhost"
 
-			#send file to client
-			sendFile(cmd, clientSock)
+			#identify ephermeral port number
+			ephemeralPort = int(cmd[2])
 
-			print "Query processed \n"
+			#open temporary connection to socket for data transfer
+			dataTransmitter = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			dataTransmitter.connect((serverAddr, ephemeralPort))
+
+			if(os.path.isfile(cmd[1])):
+				#send file to client
+				sendFile(cmd, dataTransmitter)
+				print "'get' command successfully processed \n"
+ 			else:
+				dataTransmitter.send("'get' command was unsuccessful.  Not real file name. \n")
+				print "'get' command was unsuccessful.  Not real file name. \n"                      
 
 		#Client specified "put"
 		if(cmd[0] == "put"):
@@ -140,24 +143,26 @@ while True:
 			#used to get content inside of the file
 			fileData = ""
 
-			#get and print size of the file
+			#get size of the file
 			fileSize = 0
-			fileSize = int(recvAll(dataTransmitter, 10))
-			print "The size of the received file is: ", fileSize
-
+			try:
+				fileSize = int(recvAll(dataTransmitter, 10))
+			except ValueError:
+				print "'put' command was unsuccessfull. File name may be invalid\n"
+				break
+	
 			#get contents of the file
 			fileData = recvAll(dataTransmitter, fileSize)
+			
+			if(fileData):	
+				#open and write the file data
+				file = open(cmd[1], "w")
+				file.write(fileData)
 
-			#print name of the file
-			print "The name of the received file is: " + cmd[1]
-
-			#open and write the file data
-			file = open(cmd[1], "w")
-			file.write(fileData)
-
-			#close the file
-			file.close()
-
+				#close the file
+				file.close()
+				print "'put' command successfully processed \n"
+			
 			#close data temporary transfer connection
 			dataTransmitter.close()
 
@@ -173,12 +178,13 @@ while True:
 
 			#get list of content in current directory
 			for line in commands.getstatusoutput('ls -l'):
-				dataTransmitter.send(str(line))
-
+				if line:				
+					dataTransmitter.send(str(line))
+		
 			#close temporary data transfer connection
 			dataTransmitter.close()
-			print "Query processed"
+			print "'ls' Command successfully processed \n"
 
-		#Client specified "lls"
-		if(cmd[0] == "lls"):
-			print "lls"
+	print "Client closed the connection"
+
+
