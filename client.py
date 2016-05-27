@@ -44,8 +44,8 @@ def sendFile(cmd, sock):
 
 		while True:
 
-			#grab the of the file
-			fileData = fileObj.read(15000)
+			#grab the size of the file
+			fileData = fileObj.read(os.stat(fileName).st_size)
 
 			#if not empty
 			if fileData:

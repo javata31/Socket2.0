@@ -45,8 +45,8 @@ def sendFile(cmd, sock):
 		#used to count how much of the data has been sent
 		numSent = 0
 
-		#grab the of the file
-		fileData = fileObj.read(15000)
+		#grab the size of the file
+		fileData = fileObj.read(os.stat(fileName).st_size)
 
 		#if not empty
 		if fileData:
